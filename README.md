@@ -17,10 +17,11 @@ Sistema desarrollado como proyecto del curso Tecnología Web II
 5. Acceder a `http://localhost/unimanager/public`
 
 ## Estructura del Proyecto
-unimanager/ 	├── config/ # Archivos de configuración 
-├── src/ # Código fuente de la aplicación 
-├── public/ # Archivos públicos (punto de entrada) 
-├── tests/ # Pruebas unitarias 
+unimanager/ 	
+├── config/ # Archivos de configuración 
+├── src/ # Código fuente de la aplicación
+├── public/ # Archivos públicos (punto de entrada)
+├── tests/ # Pruebas unitarias
 └── vendor/ # Dependencias de Composer
 
 ## Módulos

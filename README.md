@@ -18,10 +18,14 @@ Sistema desarrollado como proyecto del curso Tecnología Web II
 
 ## Estructura del Proyecto
 unimanager/ 	
-├── config/ # Archivos de configuración 
+├── config/ # Archivos de configuración
+
 ├── src/ # Código fuente de la aplicación
+
 ├── public/ # Archivos públicos (punto de entrada)
+
 ├── tests/ # Pruebas unitarias
+
 └── vendor/ # Dependencias de Composer
 
 ## Módulos

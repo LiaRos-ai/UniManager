@@ -1,0 +1,19 @@
+{
+    "name": "r-lopez/unimanager",
+    "description": "Sistema de Gestión Académica - Tecnología Web II",
+    "type": "project",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "R Lopez",
+            "email": "tu-email@ejemplo.com"
+        }
+    ]
+}

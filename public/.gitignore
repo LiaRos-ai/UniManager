@@ -1,0 +1,31 @@
+# Dependencias
+/vendor/
+
+# Configuración local
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/logs/
+
+# Archivos temporales
+*.tmp
+*.cache
+
+# Base de datos
+*.sql
+*.sqlite
+
+# Uploads
+/public/uploads/*
+!/public/uploads/.gitkeep

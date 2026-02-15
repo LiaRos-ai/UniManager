@@ -9,39 +9,24 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
 // Importar clases necesarias
-use App\Enums\UserRole;
+use App\Repositories\StudentRepository;
 use App\Enums\StudentStatus;
-use App\Utils\Validator;
 
-// Crear instancia de configuración
-$dbConfig = new DatabaseConfig();
+// Crear repositorio
+$studentRepo = new StudentRepository();
 
-// Datos de ejemplo para mostrar
-$ejemploEstudiante = [
-    'codigo' => '2024-00001',
-    'nombre' => 'Juan Pérez',
-    'email' => 'juan@ejemplo.com',
-    'ci' => '12345678-LP',
-    'telefono' => '+59178451234',
-    'estado' => StudentStatus::ACTIVE
-];
-
-// Validar datos
-$validaciones = [
-    'Código Estudiante' => Validator::codigoEstudiante($ejemploEstudiante['codigo']),
-    'Email' => Validator::email($ejemploEstudiante['email']),
-    'CI' => Validator::ci($ejemploEstudiante['ci']),
-    'Teléfono' => Validator::telefono($ejemploEstudiante['telefono']),
-];
+// Obtener datos
+$todosEstudiantes = $studentRepo->findAll();
+$estadisticas = $studentRepo->getEstadisticas();
+$top3 = array_slice($studentRepo->orderByPromedio(), 0, 3);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= APP_NAME ?> - Sistema de Gestión Académica</title>
+    <title><?= APP_NAME ?> - Dashboard</title>
     <style>
-        /* Estilos previos se mantienen */
         * {
             margin: 0;
             padding: 0;
@@ -57,146 +42,192 @@ $validaciones = [
 
         .container {
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
         h1 {
             color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .version {
-            color: #888;
-            font-size: 0.9em;
-            margin-bottom: 30px;
+            font-size: 2em;
+            margin-bottom: 5px;
         }
 
         .badge {
             display: inline-block;
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 12px;
-            font-size: 0.85em;
+            font-size: 0.8em;
             font-weight: bold;
             margin: 5px;
         }
 
         .badge.success { background: #d4edda; color: #155724; }
-        .badge.error { background: #f8d7da; color: #721c24; }
+        .badge.warning { background: #fff3cd; color: #856404; }
         .badge.info { background: #d1ecf1; color: #0c5460; }
 
-        .grid {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin: 20px 0;
+            margin: 25px 0;
         }
 
-        .card {
-            background: #f8f9fa;
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
+            border-radius: 15px;
+            text-align: center;
         }
 
-        .card h3 {
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-card .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .table-container {
+            margin: 25px 0;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #f8f9fa;
             color: #667eea;
-            margin-bottom: 10px;
-            font-size: 1em;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
         }
 
-        .card p {
-            color: #555;
-            margin: 5px 0;
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .validation-list {
-            list-style: none;
-            padding: 0;
+        tr:hover {
+            background: #f8f9fa;
         }
 
-        .validation-list li {
-            padding: 8px;
-            margin: 5px 0;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .section-title {
+            color: #667eea;
+            font-size: 1.3em;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
         }
 
-        .validation-list li.valid {
-            background: #d4edda;
-        }
-
-        .validation-list li.invalid {
-            background: #f8d7da;
-        }
+        .status-active { color: #28a745; font-weight: bold; }
+        .status-inactive { color: #dc3545; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1><?= APP_NAME ?></h1>
-        <div class="version">
-            Versión <?= APP_VERSION ?> 
-            <span class="badge info">Día 2 - Completado</span>
+        <div>
+            <span class="badge info">Versión <?= APP_VERSION ?></span>
+            <span class="badge success">Día 3 - Completado</span>
         </div>
 
-        <div class="grid">
-            <div class="card">
-                <h3>Información del Sistema</h3>
-                <p><strong>PHP:</strong> <?= phpversion() ?></p>
-                <p><strong>Entorno:</strong> <?= APP_ENV ?></p>
-                <p><strong>Zona Horaria:</strong> <?= date_default_timezone_get() ?></p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Total Estudiantes</div>
+                <div class="number"><?= $estadisticas['total'] ?></div>
             </div>
-
-            <div class="card">
-                <h3>Base de Datos</h3>
-                <p><strong>Host:</strong> <?= $dbConfig->getHost() ?></p>
-                <p><strong>BD:</strong> <?= $dbConfig->getDatabase() ?></p>
-                <p><strong>Puerto:</strong> <?= $dbConfig->getPort() ?></p>
+            <div class="stat-card">
+                <div class="label">Aprobados</div>
+                <div class="number"><?= $estadisticas['aprobados'] ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Reprobados</div>
+                <div class="number"><?= $estadisticas['reprobados'] ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Promedio General</div>
+                <div class="number"><?= number_format($estadisticas['promedio_general'], 1) ?></div>
             </div>
         </div>
 
-        <div class="card" style="margin: 20px 0;">
-            <h3>Ejemplo de Estudiante</h3>
-            <p><strong>Código:</strong> <?= $ejemploEstudiante['codigo'] ?></p>
-            <p><strong>Nombre:</strong> <?= $ejemploEstudiante['nombre'] ?></p>
-            <p><strong>Email:</strong> <?= $ejemploEstudiante['email'] ?></p>
-            <p><strong>CI:</strong> <?= $ejemploEstudiante['ci'] ?></p>
-            <p>
-                <strong>Estado:</strong> 
-                <span class="badge" style="background-color: <?= $ejemploEstudiante['estado']->color() ?>; color: white;">
-                    <?= $ejemploEstudiante['estado']->label() ?>
-                </span>
-            </p>
+        <h2 class="section-title">🏆 Top 3 Estudiantes</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Posición</th>
+                        <th>Código</th>
+                        <th>Nombre Completo</th>
+                        <th>Semestre</th>
+                        <th>Promedio</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($top3 as $i => $estudiante): ?>
+                        <tr>
+                            <td><?= $i + 1 ?></td>
+                            <td><?= $estudiante->getCodigo() ?></td>
+                            <td><?= $estudiante->getNombreCompleto() ?></td>
+                            <td><?= $estudiante->getSemestre() ?>°</td>
+                            <td><strong><?= number_format($estudiante->getPromedio(), 2) ?></strong></td>
+                            <td>
+                                <span class="status-<?= $estudiante->estaActivo() ? 'active' : 'inactive' ?>">
+                                    <?= $estudiante->getEstado()->label() ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
 
-        <div class="card">
-            <h3>Validaciones Realizadas</h3>
-            <ul class="validation-list">
-                <?php foreach ($validaciones as $campo => $valido): ?>
-                    <li class="<?= $valido ? 'valid' : 'invalid' ?>">
-                        <span><?= $campo ?></span>
-                        <span><?= $valido ? '✓ Válido' : '✗ Inválido' ?></span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-
-        <div class="card" style="margin-top: 20px;">
-            <h3>Roles Disponibles</h3>
-            <?php foreach (UserRole::cases() as $role): ?>
-                <span class="badge info"><?= $role->label() ?></span>
-            <?php endforeach; ?>
+        <h2 class="section-title">👥 Todos los Estudiantes</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Sem.</th>
+                        <th>Promedio</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($todosEstudiantes as $estudiante): ?>
+                        <tr>
+                            <td><?= $estudiante->getCodigo() ?></td>
+                            <td><?= $estudiante->getNombreCompleto() ?></td>
+                            <td><?= $estudiante->getEmail() ?></td>
+                            <td><?= $estudiante->getSemestre() ?>°</td>
+                            <td><?= number_format($estudiante->getPromedio(), 2) ?></td>
+                            <td>
+                                <span class="status-<?= $estudiante->estaActivo() ? 'active' : 'inactive' ?>">
+                                    <?= $estudiante->getEstado()->label() ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
 
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #888; font-size: 0.9em;">
-            Tecnología Web II - Día 2 Completado<br>
-            <?= date('Y') ?>
+            Tecnología Web II - Día 3 Completado • <?= date('Y') ?>
         </div>
     </div>
 </body>

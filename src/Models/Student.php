@@ -97,4 +97,35 @@ class Student {
             'activo' => $this->estaActivo()
         ];
     }
+
+    /**
+     * Genera reporte académico completo
+     */
+    public function generarReporte(): array {
+        $calculator = new \App\Services\AcademicCalculator();
+        $stats = $calculator->calcularEstadisticas($this->notas);
+        
+        return [
+            'estudiante' => [
+                'id' => $this->id,
+                'codigo' => $this->codigo,
+                'nombre_completo' => $this->getNombreCompleto(),
+                'email' => $this->email,
+                'semestre' => $this->semestre
+            ],
+            'academico' => [
+                'notas' => $this->notas,
+                'promedio' => $stats['promedio'],
+                'letra' => $calculator->obtenerLetra($stats['promedio']),
+                'aprobado' => $calculator->aprobo($stats['promedio']),
+                'mejor_nota' => $stats['maximo'],
+                'peor_nota' => $stats['minimo'],
+                'mediana' => $stats['mediana']
+            ],
+            'estado' => [
+                'activo' => $this->estaActivo(),
+                'estado' => $this->estado->label()
+            ]
+        ];
+    }
 }

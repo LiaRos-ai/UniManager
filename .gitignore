@@ -23,9 +23,20 @@ Thumbs.db
 *.cache
 
 # Base de datos
-*.sql
+#*.sql
 *.sqlite
 
 # Uploads
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# Compilados/dist
+/dist/
+/build/
+
+#archivos .md
+*.md
+
+# archivos de configuración
+/setup-db.php
+/test-crud.php

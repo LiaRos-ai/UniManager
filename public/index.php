@@ -1,31 +1,28 @@
 <?php
 declare(strict_types=1);
 
-// Cargar configuración
+session_start();
 require_once __DIR__ . '/../config/constants.php';
-require_once __DIR__ . '/../config/database.php';
-
-// Cargar autoloader de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Importar clases necesarias
 use App\Repositories\StudentRepository;
+use App\Models\Student;
 use App\Enums\StudentStatus;
 
-// Crear repositorio
-$studentRepo = new StudentRepository();
+// Inicializar variables
+$action = $_GET['action'] ?? 'dashboard';
+$repo = new StudentRepository();
+$mensaje = $_SESSION['mensaje'] ?? null;
+unset($_SESSION['mensaje']);
 
-// Obtener datos
-$todosEstudiantes = $studentRepo->findAll();
-$estadisticas = $studentRepo->getEstadisticas();
-$top3 = array_slice($studentRepo->orderByPromedio(), 0, 3);
+// ESTILOS
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= APP_NAME ?> - Dashboard</title>
+    <title>UniManager - Sistema de Gestión Académica</title>
     <style>
         * {
             margin: 0;
@@ -41,193 +38,351 @@ $top3 = array_slice($studentRepo->orderByPromedio(), 0, 3);
         }
 
         .container {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             max-width: 1200px;
             margin: 0 auto;
         }
 
-        h1 {
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
             color: #667eea;
-            font-size: 2em;
-            margin-bottom: 5px;
+            font-size: 2.5em;
+            margin-bottom: 10px;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: bold;
-            margin: 5px;
+        .header p {
+            color: #666;
+            font-size: 1.1em;
         }
 
-        .badge.success { background: #d4edda; color: #155724; }
-        .badge.warning { background: #fff3cd; color: #856404; }
-        .badge.info { background: #d1ecf1; color: #0c5460; }
+        .nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0 0 0;
+        }
 
-        .stats-grid {
+        .nav a, .nav button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .nav a:hover, .nav button:hover {
+            background: #5568d3;
+        }
+
+        .nav a.active {
+            background: #764ba2;
+        }
+
+        .content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .mensaje {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .exito {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .grid-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 25px 0;
+            gap: 20px;
+            margin: 30px 0;
         }
 
         .stat-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 10px;
             text-align: center;
         }
 
-        .stat-card .number {
+        .stat-card h3 {
             font-size: 2.5em;
-            font-weight: bold;
-            margin: 10px 0;
+            margin-bottom: 10px;
         }
 
-        .stat-card .label {
+        .stat-card p {
             font-size: 0.9em;
             opacity: 0.9;
         }
 
         .table-container {
-            margin: 25px 0;
             overflow-x: auto;
+            margin: 20px 0;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
+            margin: 20px 0;
         }
 
-        th {
-            background: #f8f9fa;
-            color: #667eea;
+        table thead {
+            background: #f0f0f0;
+            font-weight: 600;
+        }
+
+        table th, table td {
             padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
             font-weight: 600;
-            border-bottom: 2px solid #667eea;
         }
 
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e9ecef;
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
         }
 
-        tr:hover {
-            background: #f8f9fa;
+        .badge-inactive {
+            background: #e2e3e5;
+            color: #383d41;
         }
 
-        .section-title {
-            color: #667eea;
-            font-size: 1.3em;
-            margin: 30px 0 15px 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
+        .badge-suspended {
+            background: #f8d7da;
+            color: #721c24;
         }
 
-        .status-active { color: #28a745; font-weight: bold; }
-        .status-inactive { color: #dc3545; font-weight: bold; }
+        .badge-graduated {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.85em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 2em;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .no-data p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1><?= APP_NAME ?></h1>
-        <div>
-            <span class="badge info">Versión <?= APP_VERSION ?></span>
-            <span class="badge success">Día 3 - Completado</span>
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🎓 UniManager</h1>
+            <p>Sistema de Gestión Académica - CRUD Student</p>
+            
+            <nav class="nav">
+                <a href="?action=dashboard" class="<?= $action === 'dashboard' ? 'active' : '' ?>">📊 Dashboard</a>
+                <a href="?action=estudiantes" class="<?= $action === 'estudiantes' ? 'active' : '' ?>">👥 Estudiantes</a>
+                <a href="?action=crear" class="<?= $action === 'crear' ? 'active' : '' ?>">➕ Crear</a>
+                <a href="?action=buscar" class="<?= $action === 'buscar' ? 'active' : '' ?>">🔍 Buscar</a>
+                <a href="?action=estadisticas" class="<?= $action === 'estadisticas' ? 'active' : '' ?>">📈 Estadísticas</a>
+            </nav>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="label">Total Estudiantes</div>
-                <div class="number"><?= $estadisticas['total'] ?></div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Aprobados</div>
-                <div class="number"><?= $estadisticas['aprobados'] ?></div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Reprobados</div>
-                <div class="number"><?= $estadisticas['reprobados'] ?></div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Promedio General</div>
-                <div class="number"><?= number_format($estadisticas['promedio_general'], 1) ?></div>
-            </div>
-        </div>
+        <!-- CONTENIDO -->
+        <div class="content">
+            <?php if ($mensaje): ?>
+                <div class="mensaje <?= $mensaje['tipo'] ?>">
+                    <?= htmlspecialchars($mensaje['texto']) ?>
+                </div>
+            <?php endif; ?>
 
-        <h2 class="section-title">🏆 Top 3 Estudiantes</h2>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Posición</th>
-                        <th>Código</th>
-                        <th>Nombre Completo</th>
-                        <th>Semestre</th>
-                        <th>Promedio</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($top3 as $i => $estudiante): ?>
-                        <tr>
-                            <td><?= $i + 1 ?></td>
-                            <td><?= $estudiante->getCodigo() ?></td>
-                            <td><?= $estudiante->getNombreCompleto() ?></td>
-                            <td><?= $estudiante->getSemestre() ?>°</td>
-                            <td><strong><?= number_format($estudiante->getPromedio(), 2) ?></strong></td>
-                            <td>
-                                <span class="status-<?= $estudiante->estaActivo() ? 'active' : 'inactive' ?>">
-                                    <?= $estudiante->getEstado()->label() ?>
-                                </span>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <h2 class="section-title">👥 Todos los Estudiantes</h2>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Código</th>
-                        <th>Nombre Completo</th>
-                        <th>Email</th>
-                        <th>Sem.</th>
-                        <th>Promedio</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($todosEstudiantes as $estudiante): ?>
-                        <tr>
-                            <td><?= $estudiante->getCodigo() ?></td>
-                            <td><?= $estudiante->getNombreCompleto() ?></td>
-                            <td><?= $estudiante->getEmail() ?></td>
-                            <td><?= $estudiante->getSemestre() ?>°</td>
-                            <td><?= number_format($estudiante->getPromedio(), 2) ?></td>
-                            <td>
-                                <span class="status-<?= $estudiante->estaActivo() ? 'active' : 'inactive' ?>">
-                                    <?= $estudiante->getEstado()->label() ?>
-                                </span>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #888; font-size: 0.9em;">
-            Tecnología Web II - Día 3 Completado • <?= date('Y') ?>
+            <?php 
+            // Mostrar contenido según acción
+            switch ($action) {
+                case 'dashboard':
+                    include 'sections/dashboard.php';
+                    break;
+                case 'estudiantes':
+                    include 'sections/estudiantes.php';
+                    break;
+                case 'crear':
+                    include 'sections/crear.php';
+                    break;
+                case 'editar':
+                    include 'sections/editar.php';
+                    break;
+                case 'buscar':
+                    include 'sections/buscar.php';
+                    break;
+                case 'estadisticas':
+                    include 'sections/estadisticas.php';
+                    break;
+                default:
+                    include 'sections/dashboard.php';
+            }
+            ?>
         </div>
     </div>
 </body>

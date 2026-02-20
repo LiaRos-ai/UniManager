@@ -5,49 +5,44 @@ namespace App\Repositories;
 
 use App\Models\Student;
 use App\Enums\StudentStatus;
+use App\Database\Database;
 
 /**
- * Repositorio de estudiantes (simulado en memoria)
- * En el Día 9 conectaremos a base de datos real
+ * Repositorio de estudiantes con conexión a BD
  */
 class StudentRepository {
-    private array $students = [];
-    private int $nextId = 1;
+    private Database $db;
     
     public function __construct() {
-        $this->seedData();
+        $this->db = Database::getInstance();
     }
     
     /**
-     * Datos de prueba
+     * Crea un nuevo estudiante
      */
-    private function seedData(): void {
-        $estudiantes = [
-            ['Ana', 'García', 'Pérez', 'ana.garcia@est.edu.bo', '12345678-LP', '+59178451234', 7, [85, 90, 88, 92]],
-            ['Luis', 'Pérez', 'Mamani', 'luis.perez@est.edu.bo', '23456789-SC', '+59176542345', 6, [78, 82, 85, 80]],
-            ['María', 'López', 'Quispe', 'maria.lopez@est.edu.bo', '34567890-CB', '+59172345678', 5, [95, 92, 98, 94]],
-            ['Carlos', 'Ruiz', 'Condori', 'carlos.ruiz@est.edu.bo', '45678901-LP', '+59178234567', 7, [65, 70, 68, 72]],
-            ['Sofia', 'Torres', 'Apaza', 'sofia.torres@est.edu.bo', '56789012-SC', null, 4, [58, 62, 65, 60]],
-        ];
-        
-        foreach ($estudiantes as $i => $data) {
-            [$nombre, $paterno, $materno, $email, $ci, $tel, $sem, $notas] = $data;
+    public function create(Student $student): int {
+        try {
+            $this->db->beginTransaction();
             
-            $student = new Student(
-                id: $this->nextId++,
-                codigo: sprintf('2024-%05d', $i + 1),
-                nombre: $nombre,
-                apellidoPaterno: $paterno,
-                apellidoMaterno: $materno,
-                email: $email,
-                ci: $ci,
-                telefono: $tel,
-                semestre: $sem,
-                estado: $i === 4 ? StudentStatus::INACTIVE : StudentStatus::ACTIVE,
-                notas: $notas
-            );
+            $id = $this->db->insert('estudiantes', [
+                'codigo' => $student->getCodigo(),
+                'nombre' => $student->getNombre(),
+                'apellido_paterno' => $student->getApellidoPaterno(),
+                'apellido_materno' => $student->getApellidoMaterno(),
+                'email' => $student->getEmail(),
+                'ci' => $student->getCi(),
+                'telefono' => $student->getTelefono(),
+                'semestre' => $student->getSemestre(),
+                'estado' => $student->getEstado()->value,
+                'promedio' => $student->getPromedio(),
+            ]);
             
-            $this->students[$student->getId()] = $student;
+            $this->db->commit();
+            return $id;
+            
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw $e;
         }
     }
     
@@ -55,108 +50,161 @@ class StudentRepository {
      * Obtiene todos los estudiantes
      */
     public function findAll(): array {
-        return array_values($this->students);
+        $stmt = $this->db->query("SELECT * FROM estudiantes ORDER BY apellido_paterno, nombre");
+        $datos = $stmt->fetchAll();
+        
+        return array_map(fn($row) => $this->rowToModel($row), $datos);
     }
     
     /**
-     * Busca por ID
+     * Busca estudiante por ID
      */
     public function findById(int $id): ?Student {
-        return $this->students[$id] ?? null;
+        $stmt = $this->db->query("SELECT * FROM estudiantes WHERE id = ?", [$id]);
+        $data = $stmt->fetch();
+        
+        return $data ? $this->rowToModel($data) : null;
     }
     
     /**
-     * Busca por código
+     * Busca estudiante por código
      */
     public function findByCodigo(string $codigo): ?Student {
-        $resultado = array_filter(
-            $this->students,
-            fn($s) => $s->getCodigo() === $codigo
-        );
-        return !empty($resultado) ? array_values($resultado)[0] : null;
+        $stmt = $this->db->query("SELECT * FROM estudiantes WHERE codigo = ?", [$codigo]);
+        $data = $stmt->fetch();
+        
+        return $data ? $this->rowToModel($data) : null;
     }
     
     /**
-     * Busca por nombre
+     * Busca estudiantes por nombre
      */
     public function search(string $query): array {
-        return array_filter($this->students, function($student) use ($query) {
-            $nombreCompleto = strtolower($student->getNombreCompleto());
-            $busqueda = strtolower($query);
-            return str_contains($nombreCompleto, $busqueda);
-        });
+        $searchTerm = '%' . $query . '%';
+        $sql = "SELECT * FROM estudiantes 
+                WHERE CONCAT(nombre, ' ', apellido_paterno, ' ', apellido_materno) LIKE ?
+                ORDER BY apellido_paterno, nombre";
+        
+        $stmt = $this->db->query($sql, [$searchTerm]);
+        $datos = $stmt->fetchAll();
+        
+        return array_map(fn($row) => $this->rowToModel($row), $datos);
     }
     
     /**
-     * Filtra por semestre
+     * Busca estudiantes por semestre
      */
     public function findBySemestre(int $semestre): array {
-        return array_filter(
-            $this->students,
-            fn($s) => $s->getSemestre() === $semestre
+        $stmt = $this->db->query(
+            "SELECT * FROM estudiantes WHERE semestre = ? ORDER BY apellido_paterno, nombre",
+            [$semestre]
         );
+        $datos = $stmt->fetchAll();
+        
+        return array_map(fn($row) => $this->rowToModel($row), $datos);
     }
     
     /**
-     * Filtra por estado
+     * Busca estudiantes por estado
      */
     public function findByEstado(StudentStatus $estado): array {
-        return array_filter(
-            $this->students,
-            fn($s) => $s->getEstado() === $estado
+        $stmt = $this->db->query(
+            "SELECT * FROM estudiantes WHERE estado = ? ORDER BY apellido_paterno, nombre",
+            [$estado->value]
         );
+        $datos = $stmt->fetchAll();
+        
+        return array_map(fn($row) => $this->rowToModel($row), $datos);
     }
     
     /**
      * Obtiene estudiantes aprobados
      */
     public function findAprobados(): array {
-        return array_filter(
-            $this->students,
-            fn($s) => $s->estaAprobado()
-        );
+        $stmt = $this->db->query("SELECT * FROM estudiantes WHERE promedio >= 60 ORDER BY apellido_paterno, nombre");
+        $datos = $stmt->fetchAll();
+        
+        return array_map(fn($row) => $this->rowToModel($row), $datos);
     }
     
     /**
      * Obtiene estudiantes reprobados
      */
     public function findReprobados(): array {
-        return array_filter(
-            $this->students,
-            fn($s) => !$s->estaAprobado()
-        );
+        $stmt = $this->db->query("SELECT * FROM estudiantes WHERE promedio < 60 ORDER BY apellido_paterno, nombre");
+        $datos = $stmt->fetchAll();
+        
+        return array_map(fn($row) => $this->rowToModel($row), $datos);
     }
     
     /**
-     * Ordena por promedio
+     * Actualiza un estudiante
      */
-    public function orderByPromedio(bool $descendente = true): array {
-        $students = $this->students;
-        usort($students, function($a, $b) use ($descendente) {
-            $comp = $a->getPromedio() <=> $b->getPromedio();
-            return $descendente ? -$comp : $comp;
-        });
-        return $students;
+    public function update(int $id, Student $student): bool {
+        $rowsAffected = $this->db->update(
+            'estudiantes',
+            [
+                'codigo' => $student->getCodigo(),
+                'nombre' => $student->getNombre(),
+                'apellido_paterno' => $student->getApellidoPaterno(),
+                'apellido_materno' => $student->getApellidoMaterno(),
+                'email' => $student->getEmail(),
+                'ci' => $student->getCi(),
+                'telefono' => $student->getTelefono(),
+                'semestre' => $student->getSemestre(),
+                'estado' => $student->getEstado()->value,
+                'promedio' => $student->getPromedio(),
+            ],
+            'id = ?',
+            [$id]
+        );
+        
+        return $rowsAffected > 0;
+    }
+    
+    /**
+     * Elimina un estudiante
+     */
+    public function delete(int $id): bool {
+        $rowsAffected = $this->db->delete('estudiantes', 'id = ?', [$id]);
+        return $rowsAffected > 0;
     }
     
     /**
      * Obtiene estadísticas generales
      */
     public function getEstadisticas(): array {
-        $total = count($this->students);
-        $aprobados = count($this->findAprobados());
+        $total = $this->db->query("SELECT COUNT(*) as count FROM estudiantes")->fetch()['count'];
+        $aprobados = $this->db->query("SELECT COUNT(*) as count FROM estudiantes WHERE promedio >= 60")->fetch()['count'];
         
-        $promedios = array_map(fn($s) => $s->getPromedio(), $this->students);
-        $promedioGeneral = !empty($promedios) 
-            ? array_sum($promedios) / count($promedios) 
-            : 0;
+        $resultado = $this->db->query("SELECT AVG(promedio) as promedio FROM estudiantes")->fetch();
+        $promedioGeneral = (float)($resultado['promedio'] ?? 0);
         
         return [
-            'total' => $total,
-            'aprobados' => $aprobados,
-            'reprobados' => $total - $aprobados,
-            'promedio_general' => $promedioGeneral,
-            'tasa_aprobacion' => $total > 0 ? ($aprobados / $total) * 100 : 0
+            'total' => (int)$total,
+            'aprobados' => (int)$aprobados,
+            'reprobados' => (int)$total - (int)$aprobados,
+            'promedio_general' => round($promedioGeneral, 2),
+            'tasa_aprobacion' => $total > 0 ? round(((int)$aprobados / (int)$total) * 100, 2) : 0
         ];
+    }
+    
+    /**
+     * Convierte una fila de BD a objeto Student
+     */
+    private function rowToModel(array $row): Student {
+        return new Student(
+            id: (int)$row['id'],
+            codigo: $row['codigo'],
+            nombre: $row['nombre'],
+            apellidoPaterno: $row['apellido_paterno'],
+            apellidoMaterno: $row['apellido_materno'],
+            email: $row['email'],
+            ci: $row['ci'],
+            telefono: $row['telefono'],
+            semestre: (int)$row['semestre'],
+            estado: StudentStatus::from($row['estado']),
+            notas: !empty($row['notas']) ? json_decode($row['notas'], true) : []
+        );
     }
 }

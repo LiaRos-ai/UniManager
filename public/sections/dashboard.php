@@ -24,11 +24,11 @@ $estudiantes = $repo->findAll();
         <p>Estudiantes Reprobados</p>
     </div>
     <div class="stat-card">
-        <h3><?= number_format($stats['promedio_general'], 2) ?></h3>
+        <h3><?= number_format((float)$stats['promedio_general'], 2) ?></h3>
         <p>Promedio General</p>
     </div>
     <div class="stat-card">
-        <h3><?= number_format($stats['tasa_aprobacion'], 1) ?>%</h3>
+        <h3><?= number_format((float)$stats['tasa_aprobacion'], 1) ?>%</h3>
         <p>Tasa de Aprobación</p>
     </div>
 </div>

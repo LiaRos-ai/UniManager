@@ -347,6 +347,7 @@ unset($_SESSION['mensaje']);
                 <a href="?action=crear" class="<?= $action === 'crear' ? 'active' : '' ?>">➕ Crear</a>
                 <a href="?action=buscar" class="<?= $action === 'buscar' ? 'active' : '' ?>">🔍 Buscar</a>
                 <a href="?action=estadisticas" class="<?= $action === 'estadisticas' ? 'active' : '' ?>">📈 Estadísticas</a>
+                <a href="?action=inscribir_estudiante" class="<?= $action === 'inscribir_estudiante' ? 'active' : '' ?>">📚 Inscripciones</a>
             </nav>
         </div>
 
@@ -378,6 +379,9 @@ unset($_SESSION['mensaje']);
                     break;
                 case 'estadisticas':
                     include 'sections/estadisticas.php';
+                    break;
+                case 'inscribir_estudiante':
+                    include 'sections/inscribir_estudiante.php';
                     break;
                 default:
                     include 'sections/dashboard.php';

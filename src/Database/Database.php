@@ -86,6 +86,32 @@ class Database {
     }
     
     /**
+     * Obtiene un único registro como array asociativo
+     */
+    public function queryOne(string $sql, array $params = []): ?array {
+        try {
+            $stmt = $this->query($sql, $params);
+            $result = $stmt->fetch();
+            return $result ?: null;
+        } catch (PDOException $e) {
+            throw new PDOException("Error en queryOne: {$e->getMessage()}");
+        }
+    }
+    
+    /**
+     * Ejecuta una consulta sin retornar resultados (INSERT, UPDATE, DELETE)
+     */
+    public function execute(string $sql, array $params = []): int {
+        try {
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->rowCount();
+        } catch (PDOException $e) {
+            throw new PDOException("Error en execute: {$e->getMessage()}");
+        }
+    }
+    
+    /**
      * Inserta un registro
      */
     public function insert(string $table, array $data): int {

@@ -32,6 +32,12 @@ unimanager/
 
 - ✅ Día 1: Inicialización del proyecto
 - 🔄 Día 2-20: En desarrollo
+- Inscripciones
+Cómo usar:
+1️⃣ Instalar tablas y datos:
+    php setup-inscripciones.php
+2️⃣ Acceder desde navegador: 📚 Inscripciones en el menú.
+
 
 ## Autor
 

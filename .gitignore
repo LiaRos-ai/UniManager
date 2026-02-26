@@ -36,7 +36,4 @@ Thumbs.db
 
 #archivos .md
 *.md
-
-# archivos de configuración
-/setup-db.php
-/test-crud.php
+*.txt

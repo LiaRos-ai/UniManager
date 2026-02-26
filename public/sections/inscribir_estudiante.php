@@ -13,8 +13,8 @@ $cursos_disponibles = [];
 $mensaje = '';
 $tipo_mensaje = '';
 
-// Obtener lista de estudiantes para el dropdown
-$estudiantes = $estudianteRepo->findAll();
+// Obtener lista de estudiantes para el dropdown (como arrays)
+$estudiantes = $estudianteRepo->findAllAsArray();
 
 // Si se envía formulario de inscripción
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 // Si se seleccionó un estudiante
 if (isset($_GET['id'])) {
     $estudiante_id = (int)$_GET['id'];
-    $estudiante_seleccionado = $estudianteRepo->findById($estudiante_id);
+    $estudiante_seleccionado = $estudianteRepo->findByIdAsArray($estudiante_id);
     
     if ($estudiante_seleccionado) {
         $inscripciones_estudiante = $inscripcionRepo->cursosDeEstudiante($estudiante_id);
@@ -99,7 +99,7 @@ $estadisticas = $inscripcionRepo->estadisticas();
             <p>Retiradas</p>
         </div>
         <div class="stat-card" style="border-left: 4px solid #9b59b6;">
-            <h3><?= number_format($estadisticas['promedio_general'], 2) ?></h3>
+            <h3><?= number_format((float)$estadisticas['promedio_general'], 2) ?></h3>
             <p>Promedio General</p>
         </div>
     </div>
@@ -162,7 +162,7 @@ $estadisticas = $inscripcionRepo->estadisticas();
                     </div>
                     <div class="rend-item">
                         <span class="rend-label">Promedio:</span>
-                        <span class="rend-value"><?= number_format($rendimiento['promedio_notas'], 2) ?></span>
+                        <span class="rend-value"><?= number_format((float)$rendimiento['promedio_notas'], 2) ?></span>
                     </div>
                 </div>
             </div>
@@ -355,7 +355,7 @@ $estadisticas = $inscripcionRepo->estadisticas();
                             <td><?= htmlspecialchars($registro['docente_nombre'] ?? 'N/A') ?></td>
                             <td>
                                 <?php if ($registro['nota_final']): ?>
-                                    <?= number_format($registro['nota_final'], 2) ?>
+                                    <?= number_format((float)$registro['nota_final'], 2) ?>
                                 <?php else: ?>
                                     <span class="text-muted">-</span>
                                 <?php endif; ?>

@@ -57,6 +57,14 @@ class StudentRepository {
     }
     
     /**
+     * Obtiene todos los estudiantes como arrays (para vistas)
+     */
+    public function findAllAsArray(): array {
+        $stmt = $this->db->query("SELECT id, codigo, nombre, apellido_paterno, apellido_materno, email, semestre FROM estudiantes ORDER BY apellido_paterno, nombre");
+        return $stmt->fetchAll() ?: [];
+    }
+    
+    /**
      * Busca estudiante por ID
      */
     public function findById(int $id): ?Student {
@@ -64,6 +72,14 @@ class StudentRepository {
         $data = $stmt->fetch();
         
         return $data ? $this->rowToModel($data) : null;
+    }
+    
+    /**
+     * Busca estudiante por ID como array (para vistas)
+     */
+    public function findByIdAsArray(int $id): ?array {
+        $stmt = $this->db->query("SELECT id, codigo, nombre, apellido_paterno, apellido_materno, email, semestre FROM estudiantes WHERE id = ?", [$id]);
+        return $stmt->fetch() ?: null;
     }
     
     /**

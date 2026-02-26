@@ -279,10 +279,10 @@ class InscripcionRepository {
             []
         )['total'] ?? 0;
 
-        $promedio_general = $this->db->queryOne(
+        $promedio_general = (float)(($this->db->queryOne(
             'SELECT ROUND(AVG(nota_final), 2) as promedio FROM inscripciones WHERE nota_final IS NOT NULL',
             []
-        )['promedio'] ?? 0;
+        )['promedio'] ?? 0));
 
         return [
             'total_inscripciones' => $total_inscripciones,

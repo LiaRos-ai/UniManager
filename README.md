@@ -32,7 +32,9 @@ unimanager/
 
 - ✅ Día 1: Inicialización del proyecto
 - 🔄 Día 2-20: En desarrollo
-- Inscripciones
+
+- Inscripciones (base de datos avanzadas)
+
 Cómo usar:
 1️⃣ Instalar tablas y datos:
     php setup-inscripciones.php

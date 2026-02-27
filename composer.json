@@ -8,7 +8,8 @@
     "autoload": {
         "psr-4": {
             "App\\": "src/",
-            "UniManager\\": "classes/"
+            "UniManager\\": "classes/",
+            "UniManager\\Auth\\": "src/Auth/"
         }
     },
     "authors": [

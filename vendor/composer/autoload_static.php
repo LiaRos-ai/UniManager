@@ -7,6 +7,11 @@ namespace Composer\Autoload;
 class ComposerStaticInit37383fc9ad90c06e10b9d35b50a58eb1
 {
     public static $prefixLengthsPsr4 = array (
+        'U' =>
+        array (
+            'UniManager\\Auth\\' => 16,
+            'UniManager\\' => 11,
+        ),
         'A' =>
         array (
             'App\\' => 4,
@@ -14,6 +19,14 @@ class ComposerStaticInit37383fc9ad90c06e10b9d35b50a58eb1
     );
 
     public static $prefixDirsPsr4 = array (
+        'UniManager\\Auth\\' =>
+        array (
+            0 => __DIR__ . '/../..' . '/src/Auth',
+        ),
+        'UniManager\\' =>
+        array (
+            0 => __DIR__ . '/../..' . '/classes',
+        ),
         'App\\' =>
         array (
             0 => __DIR__ . '/../..' . '/src',

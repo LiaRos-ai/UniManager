@@ -40,6 +40,12 @@ Cómo usar:
     php setup-inscripciones.php
 2️⃣ Acceder desde navegador: 📚 Inscripciones en el menú.
 
+Prueba rápida (Seguridad y Autenticacion):
+
+  1️⃣  Ve a http://localhost/unimanager/public/dashboard.php
+    Sin login → Te redirige a login
+  2️⃣  Ingresa: [juan@unimanager.edu]/Password123
+    Deberías ver el dashboard protegido ✅
 
 ## Autor
 

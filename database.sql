@@ -62,3 +62,62 @@ CREATE OR REPLACE VIEW vista_rendimiento_estudiante AS
     FROM estudiantes e
     LEFT JOIN inscripciones i ON e.id = i.estudiante_id
     GROUP BY e.id, e.nombre, e.apellido;
+
+
+-- =====================================================
+-- Archivo: database/migrations/users.sql
+-- =====================================================
+
+CREATE DATABASE IF NOT EXISTS unimanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE unimanager;
+
+-- Tabla de roles (admin, estudiante, docente)
+CREATE TABLE roles (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insertar roles básicos
+INSERT INTO roles (nombre, descripcion) VALUES
+    ('admin', 'Administrador del sistema'),
+    ('estudiante', 'Estudiante universitario'),
+    ('docente', 'Docente universitario');
+
+-- Tabla de usuarios
+CREATE TABLE usuarios (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,      -- bcrypt hash (60+ chars)
+    rol_id INT NOT NULL DEFAULT 2,        -- 2 = estudiante por defecto
+    activo TINYINT(1) DEFAULT 1,
+    remember_token VARCHAR(100) NULL,     -- Para 'recordarme'
+    ultimo_login TIMESTAMP NULL,
+    intentos_login INT DEFAULT 0,         -- Protección brute force
+    bloqueado_hasta TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (rol_id) REFERENCES roles(id)
+);
+
+-- Usuario administrador de prueba
+-- Password: Admin2026! (cambia esto en producción)
+INSERT INTO usuarios (nombre, apellido, email, password, rol_id) VALUES (
+    'Admin', 'UniManager',
+    'admin@unimanager.edu',
+    '$2y$12$DemoHashQueDebeGenerarsePHPpd5J.LxYi8AUJPw8vB6WbRV', -- Usar php -r
+    1
+);
+
+-- Tabla para logs de seguridad
+CREATE TABLE security_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT NULL,
+    accion VARCHAR(100) NOT NULL,   -- 'login_exitoso', 'login_fallido', etc.
+    ip VARCHAR(45) NOT NULL,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);

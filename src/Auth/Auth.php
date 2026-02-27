@@ -79,7 +79,7 @@ class Auth {
         // 4. Verificar si necesita actualizar hash
         if (password_needs_rehash($usuario['password'], PASSWORD_BCRYPT, ['cost' => 12])) {
             $nuevoHash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-            $this->db->update('usuarios', ['password' => $nuevoHash], 'id = :id', ['id' => $usuario['id']]);
+            $this->db->update('usuarios', ['password' => $nuevoHash], 'id = ?', [$usuario['id']]);
         }
         
         // 5. Crear sesión segura
@@ -93,7 +93,7 @@ class Auth {
         // 6. Actualizar último login y resetear intentos
         $this->db->update('usuarios',
             ['ultimo_login' => date('Y-m-d H:i:s'), 'intentos_login' => 0],
-            'id = :id', ['id' => $usuario['id']]
+            'id = ?', [$usuario['id']]
         );
         
         return $usuario;
@@ -162,9 +162,9 @@ class Auth {
     }
     
     private function registrarIntentoFallido(int $userId): void {
-        $this->db->query(
-            'UPDATE usuarios SET intentos_login = intentos_login + 1 WHERE id = :id',
-            ['id' => $userId]
+        $this->db->execute(
+            'UPDATE usuarios SET intentos_login = intentos_login + 1 WHERE id = ?',
+            [$userId]
         );
     }
 }

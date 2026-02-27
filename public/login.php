@@ -10,7 +10,7 @@ iniciarSesionSegura();
 
 $auth = new Auth();
 $error = '';
-$redirect = $_GET['redirect'] ?? '/dashboard.php';
+$redirect = $_GET['redirect'] ?? '/unimanager/public/dashboard.php';
 
 // Si ya está logueado, redirigir
 if ($auth->estaAutenticado()) {

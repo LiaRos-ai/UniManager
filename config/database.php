@@ -1,21 +1,40 @@
 <?php
-declare(strict_types = 1)
-;
+declare(strict_types=1);
 
 /**
- * Configuración de base de datos
+ * config/database.php
+ * Proporciona Database::getInstance() para compatibilidad con API REST
+ * Internamente usa App\Database\Database del namespace
+ */
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use App\Database\Database as AppDatabase;
+
+// Wrapper: Database::getInstance() delega a AppDatabase::getInstance()
+if (!class_exists('Database')) {
+    class Database
+    {
+        public static function getInstance(array $config = []): AppDatabase
+        {
+            return AppDatabase::getInstance($config);
+        }
+    }
+}
+
+/**
+ * DatabaseConfig - Clase legada para compatibilidad
  */
 class DatabaseConfig
 {
-    public function __construct(private
-        string $host = 'localhost', private
-        string $database = 'unimanager', private
-        string $username = 'root', private
-        string $password = '', private
-        string $charset = 'utf8mb4', private
-        int $port = 3306
-        )
-    {
+    public function __construct(
+        private string $host = 'localhost',
+        private string $database = 'unimanager',
+        private string $username = 'root',
+        private string $password = '',
+        private string $charset = 'utf8mb4',
+        private int $port = 3306
+    ) {
     }
 
     public function getHost(): string
